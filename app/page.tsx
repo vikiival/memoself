@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sparkles, Gift } from "lucide-react"
 import { validateClaimCode } from "@/lib/memo-api"
+import { WalletSelect } from "@/components/account/wallet-select"
+import { ChainSelect } from "@/components/chain/chain-select"
 // import { WalletSelect } from "@/components/account/wallet-select";
 
 export default function ClaimPage() {
@@ -66,10 +68,8 @@ export default function ClaimPage() {
               <a href="#" className="text-gray-600 hover:text-gray-900">
                 Collectors
               </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">
-                Builders
-              </a>
-              {/* <WalletSelect /> */}
+              <ChainSelect />
+              <WalletSelect />
               <Button className="bg-purple-600 hover:bg-purple-700">Make a MEMO</Button>
             </div>
           </nav>
@@ -144,16 +144,8 @@ export default function ClaimPage() {
           <div className="flex items-center space-x-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
             <div>
-              <div className="text-2xl font-bold text-gray-900">1,000,000</div>
-              <div className="text-sm text-gray-600">MEMOs minted</div>
-            </div>
-            <Sparkles className="w-5 h-5 text-purple-500" />
-          </div>
-          <div className="flex items-center space-x-2">
-            <Sparkles className="w-5 h-5 text-purple-500" />
-            <div>
-              <div className="text-2xl font-bold text-gray-900">10,000</div>
-              <div className="text-sm text-gray-600">Issuers</div>
+              <div className="text-2xl font-bold text-gray-900">10+</div>
+              <div className="text-sm text-gray-600">People love MEMO</div>
             </div>
             <Sparkles className="w-5 h-5 text-purple-500" />
           </div>

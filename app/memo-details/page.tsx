@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,18 +14,22 @@ import Image from "next/image"
 import { SelfQRVerify } from "@/components/self/self-qr-verify"
 import { fetchMemoByCode } from "@/lib/memo-api"
 import type { Memo } from "@/lib/types"
+import { usePolkadotExtension } from "@/providers/polkadot-extension-provider"
 
 export default function MEMODetailsPage() {
   const [claimCode, setClaimCode] = useState("")
   const [walletAddress, setWalletAddress] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [isVerified, setIsVerified] = useState(false)
+  const [isVerified, setIsVerified] = useState(true)
   const [currentStep, setCurrentStep] = useState(1) // 1: Verification, 2: Details, 3: Complete
   const [memo, setMemo] = useState<Memo | null>(null)
   const [memoLoading, setMemoLoading] = useState(true)
   const [memoError, setMemoError] = useState("")
+  const { selectedAccount } = usePolkadotExtension()
   const router = useRouter()
+
+  console.log("Selected Account:", selectedAccount)
 
   useEffect(() => {
     setMounted(true)
@@ -35,7 +39,7 @@ export default function MEMODetailsPage() {
       return
     }
     setClaimCode(code)
-    
+
     // Fetch memo data
     const loadMemoData = async () => {
       try {
@@ -49,9 +53,15 @@ export default function MEMODetailsPage() {
         setMemoLoading(false)
       }
     }
-    
+
     loadMemoData()
   }, [router])
+
+  useEffect(() => {
+    setWalletAddress(
+      selectedAccount?.address || ""
+    )
+  }, [selectedAccount?.address])
 
   const handleClaim = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,8 +88,8 @@ export default function MEMODetailsPage() {
   }
 
   const isValidAddress = (address: string) => {
-    // Basic Ethereum address validation
-    return /^0x[a-fA-F0-9]{40}$/.test(address)
+    // Basic Polkadot address validation
+    return address.startsWith("5") && address.length >= 47 && address.length <= 48
   }
 
   if (!mounted) {
@@ -120,9 +130,8 @@ export default function MEMODetailsPage() {
               </div>
               <div className="w-12 h-0.5 bg-purple-300"></div>
               <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
-                  currentStep >= 1 ? 'bg-purple-500' : 'bg-gray-300'
-                }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${currentStep >= 1 ? 'bg-purple-500' : 'bg-gray-300'
+                  }`}>
                   {isVerified ? '✓' : '1'}
                 </div>
                 <span className={`ml-2 text-sm ${currentStep >= 1 ? 'font-semibold text-purple-600' : 'text-gray-500'}`}>
@@ -131,9 +140,8 @@ export default function MEMODetailsPage() {
               </div>
               <div className={`w-12 h-0.5 ${currentStep >= 2 ? 'bg-purple-300' : 'bg-gray-300'}`}></div>
               <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                  currentStep >= 2 ? 'bg-purple-500 text-white' : 'bg-gray-300 text-gray-600'
-                }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep >= 2 ? 'bg-purple-500 text-white' : 'bg-gray-300 text-gray-600'
+                  }`}>
                   2
                 </div>
                 <span className={`ml-2 text-sm ${currentStep >= 2 ? 'font-semibold text-purple-600' : 'text-gray-500'}`}>
@@ -142,9 +150,8 @@ export default function MEMODetailsPage() {
               </div>
               <div className={`w-12 h-0.5 ${currentStep >= 3 ? 'bg-purple-300' : 'bg-gray-300'}`}></div>
               <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                  currentStep >= 3 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep >= 3 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                  }`}>
                   {currentStep >= 3 ? '✓' : '3'}
                 </div>
                 <span className={`ml-2 text-sm ${currentStep >= 3 ? 'font-semibold text-green-600' : 'text-gray-500'}`}>
@@ -231,6 +238,7 @@ export default function MEMODetailsPage() {
                 <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4">
                   <h3 className="font-semibold mb-2">Event Description</h3>
                   <p className="text-sm text-gray-600">
+                    {memo?.description}
                     Join us for the premier Web3 conference featuring industry leaders, innovative projects, and
                     networking opportunities. This MEMO commemorates your participation in shaping the future of
                     decentralized technology.
@@ -247,7 +255,7 @@ export default function MEMODetailsPage() {
             {/* Verification/Wallet Input Card */}
             {!isVerified ? (
               <div className="space-y-6">
-                <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+                {/* <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
                   <CardHeader className="text-center">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
                       <Shield className="w-8 h-8 text-white" />
@@ -268,12 +276,13 @@ export default function MEMODetailsPage() {
                       </ul>
                     </div>
                   </CardContent>
-                </Card>
-                
-                <SelfQRVerify 
+                </Card> */}
+
+                {selectedAccount?.address ? <SelfQRVerify
+                  address={selectedAccount?.address || ""}
                   onSuccess={handleVerificationSuccess}
                   onError={handleVerificationError}
-                />
+                /> : null}
               </div>
             ) : (
               <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
@@ -282,16 +291,16 @@ export default function MEMODetailsPage() {
                     <Wallet className="w-8 h-8 text-white" />
                   </div>
                   <CardTitle className="text-2xl">Enter Wallet Address</CardTitle>
-                  <CardDescription>Provide your Ethereum wallet address to receive your MEMO token</CardDescription>
+                  <CardDescription>Provide your Polkadot Wallet address to receive your MEMO token</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleClaim} className="space-y-6">
                     <div className="space-y-2">
-                      <Label htmlFor="walletAddress">Ethereum Wallet Address</Label>
+                      <Label htmlFor="walletAddress">Polkadot Wallet Address</Label>
                       <Input
                         id="walletAddress"
                         type="text"
-                        placeholder="0x..."
+                        placeholder="1..."
                         value={walletAddress}
                         onChange={(e) => setWalletAddress(e.target.value)}
                         className="font-mono text-sm"

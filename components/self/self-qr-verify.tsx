@@ -1,28 +1,32 @@
-"use client";
+"use client"
 
-import React, { useEffect, useMemo } from "react";
-import { countries, SelfApp, SelfAppBuilder, SelfQRcodeWrapper } from "@selfxyz/qrcode";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, ExternalLink, Shield, CheckCircle } from "lucide-react";
-import { useState } from "react";
+import React, { useEffect, useMemo } from "react"
+import { countries, SelfApp, SelfAppBuilder, SelfQRcodeWrapper } from "@selfxyz/qrcode"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Copy, ExternalLink, Shield, CheckCircle } from "lucide-react"
+import { useState } from "react"
 import { getUniversalLink } from "@selfxyz/common"
+import { Hex } from 'ox'
 
 interface SelfQRVerifyProps {
-  onSuccess?: () => void;
-  onError?: (error: string) => void;
-  className?: string;
+  onSuccess?: () => void
+  onError?: (error: string) => void
+  className?: string
+  address?: string // Optional address prop to pass user address
 }
 
-export function SelfQRVerify({ onSuccess, onError, className }: SelfQRVerifyProps) {
-  const [isVerified, setIsVerified] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [selfApp, setSelfApp] = useState<SelfApp | null>(null);
-  const [universalLink, setUniversalLink] = useState("");
-  const [userId, setUserId] = useState("0x0000000000000000000000000000000000000000");
-  const excludedCountries = useMemo(() => [countries.NORTH_KOREA], []);
+export function SelfQRVerify({ onSuccess, onError, className, address }: SelfQRVerifyProps) {
+  const [isVerified, setIsVerified] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState("")
+  const [selfApp, setSelfApp] = useState<SelfApp | null>(null)
+  const [universalLink, setUniversalLink] = useState("")
+  const userId = Hex.fromString(address || "0x0000000000000000000000000000000000000000")
+  const excludedCountries = useMemo(() => [countries.NORTH_KOREA], [])
+
+  console.log("SelfQRVerify Component Rendered", address)
 
   useEffect(() => {
     try {
@@ -33,18 +37,18 @@ export function SelfQRVerify({ onSuccess, onError, className }: SelfQRVerifyProp
         endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`,
         logoBase64:
           "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
-        userId: undefined,
+        userId: userId,
         endpointType: "staging_https",
         userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
         userDefinedData: "Hello from Memo",
         disclosures: {
 
-        // // what you want to verify from users' identity
+          // // what you want to verify from users' identity
           minimumAge: 18,
           // ofac: false,
           // excludedCountries: [countries.BELGIUM],
 
-        // //what you want users to reveal
+          // //what you want users to reveal
           // name: false,
           // issuing_state: true,
           nationality: true,
@@ -53,61 +57,65 @@ export function SelfQRVerify({ onSuccess, onError, className }: SelfQRVerifyProp
           // gender: true,
           // expiry_date: false,
         }
-      }).build();
+      }).build()
 
-      setSelfApp(app);
-      setUniversalLink(getUniversalLink(app));
+      setSelfApp(app)
+      setUniversalLink(getUniversalLink(app))
     } catch (error) {
-      console.error("Failed to initialize Self app:", error);
+      console.error("Failed to initialize Self app:", error)
     }
-  }, []);
+  }, [])
 
   const displayToast = (message: string) => {
-    setToastMessage(message);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-  };
+    setToastMessage(message)
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 3000)
+  }
 
   const handleSuccessfulVerification = () => {
-    setIsVerified(true);
-    displayToast("Identity verified successfully!");
+    setIsVerified(true)
+    displayToast("Identity verified successfully!")
     if (onSuccess) {
       setTimeout(() => {
-        onSuccess();
-      }, 1500);
+        onSuccess()
+      }, 1500)
     }
-  };
+  }
 
   const handleError = () => {
-    const errorMessage = "Failed to verify identity. Please try again.";
-    displayToast(errorMessage);
+    const errorMessage = "Failed to verify identity. Please try again."
+    displayToast(errorMessage)
     if (onError) {
-      onError(errorMessage);
+      onError(errorMessage)
     }
-  };
+  }
 
   const handleCopyLink = () => {
-    if (!universalLink) return;
+    if (!universalLink) return
 
     navigator.clipboard
       .writeText(universalLink)
       .then(() => {
-        setLinkCopied(true);
-        displayToast("Universal link copied to clipboard!");
-        setTimeout(() => setLinkCopied(false), 2000);
+        setLinkCopied(true)
+        displayToast("Universal link copied to clipboard!")
+        setTimeout(() => setLinkCopied(false), 2000)
       })
       .catch((err) => {
-        console.error("Failed to copy text: ", err);
-        displayToast("Failed to copy link");
-      });
-  };
+        console.error("Failed to copy text: ", err)
+        displayToast("Failed to copy link")
+      })
+  }
 
   const handleOpenApp = () => {
-        if (!universalLink) return;
+    if (!universalLink) return
 
-    window.open(universalLink, "_blank");
-    displayToast("Opening Self App...");
-  };
+    window.open(universalLink, "_blank")
+    displayToast("Opening Self App...")
+  }
+
+  if (!address) {
+    return null
+  }
 
   // if (error) {
   //   return (
@@ -140,12 +148,24 @@ export function SelfQRVerify({ onSuccess, onError, className }: SelfQRVerifyProp
               : "Scan the QR code with the Self Protocol app to verify your identity and claim your MEMO"}
           </CardDescription>
         </CardHeader>
+        <CardContent>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <h4 className="font-semibold text-amber-900 mb-2">Why verify?</h4>
+            <ul className="text-sm text-amber-800 space-y-1">
+              <li>• Prevents fraudulent claims</li>
+              <li>• Ensures fair distribution</li>
+              <li>• Complies with event policies</li>
+              <li>• Verifies minimum age requirement (18+)</li>
+            </ul>
+          </div>
+        </CardContent>
         <CardContent className="space-y-6">
+
           {!isVerified && (
             <>
               {/* QR Code */}
               <div className="flex justify-center">
-                { selfApp ? (
+                {selfApp ? (
                   <SelfQRcodeWrapper
                     selfApp={selfApp}
                     onSuccess={handleSuccessfulVerification}
@@ -192,7 +212,7 @@ export function SelfQRVerify({ onSuccess, onError, className }: SelfQRVerifyProp
             </div>
             <div className="bg-gray-100 rounded-md px-3 py-2 text-center break-all text-sm font-mono text-gray-800 border border-gray-200">
               {userId !== "0x0000000000000000000000000000000000000000" ? (
-                userId
+                address
               ) : (
                 <span className="text-gray-400">Not connected</span>
               )}
@@ -233,6 +253,6 @@ export function SelfQRVerify({ onSuccess, onError, className }: SelfQRVerifyProp
         </div>
       )}
     </div>
-  );
+  )
 }
 
