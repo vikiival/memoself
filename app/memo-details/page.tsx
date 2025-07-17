@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Calendar, MapPin, Users, Wallet, ArrowRight, Shield } from "lucide-react"
 import Image from "next/image"
 import { SelfQRVerify } from "@/components/self/self-qr-verify"
+import { fetchMemoByCode } from "@/lib/memo-api"
+import type { Memo } from "@/lib/types"
 
 export default function MEMODetailsPage() {
   const [claimCode, setClaimCode] = useState("")
@@ -20,6 +22,9 @@ export default function MEMODetailsPage() {
   const [mounted, setMounted] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
   const [currentStep, setCurrentStep] = useState(1) // 1: Verification, 2: Details, 3: Complete
+  const [memo, setMemo] = useState<Memo | null>(null)
+  const [memoLoading, setMemoLoading] = useState(true)
+  const [memoError, setMemoError] = useState("")
   const router = useRouter()
 
   useEffect(() => {
@@ -30,6 +35,22 @@ export default function MEMODetailsPage() {
       return
     }
     setClaimCode(code)
+    
+    // Fetch memo data
+    const loadMemoData = async () => {
+      try {
+        setMemoLoading(true)
+        const memoData = await fetchMemoByCode(code)
+        setMemo(memoData)
+      } catch (error) {
+        console.error("Failed to load memo data:", error)
+        setMemoError("Failed to load memo details. Please try again.")
+      } finally {
+        setMemoLoading(false)
+      }
+    }
+    
+    loadMemoData()
   }, [router])
 
   const handleClaim = async (e: React.FormEvent) => {
@@ -137,44 +158,75 @@ export default function MEMODetailsPage() {
             {/* MEMO Details Card */}
             <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
               <CardHeader className="text-center">
-                <div className="relative w-40 h-40 mx-auto mb-4">
-                  <Image
-                    src="/placeholder.svg?height=400&width=400"
-                    alt="MEMO Token"
-                    fill
-                    className="rounded-full object-cover border-4 border-purple-200"
-                  />
-                  <div className="absolute -top-2 -right-2">
-                    <Badge className="bg-blue-500 hover:bg-blue-600">Available</Badge>
+                {memoLoading ? (
+                  <div className="space-y-4">
+                    <div className="w-40 h-40 mx-auto bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3 mx-auto"></div>
                   </div>
-                </div>
-                <CardTitle className="text-2xl">Web3 Conference 2024</CardTitle>
-                <CardDescription>Memory Protocol</CardDescription>
+                ) : memoError ? (
+                  <div className="text-center text-red-600">
+                    <p>{memoError}</p>
+                  </div>
+                ) : memo ? (
+                  <>
+                    <div className="relative w-40 h-40 mx-auto mb-4">
+                      <Image
+                        src={memo.image || "/placeholder.svg?height=400&width=400"}
+                        alt={memo.name}
+                        fill
+                        className="rounded-full object-cover border-4 border-purple-200"
+                      />
+                      <div className="absolute -top-2 -right-2">
+                        <Badge className="bg-blue-500 hover:bg-blue-600">Available</Badge>
+                      </div>
+                    </div>
+                    <CardTitle className="text-2xl">{memo.name}</CardTitle>
+                    <CardDescription>{memo.description}</CardDescription>
+                  </>
+                ) : null}
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-3 text-sm">
-                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <Calendar className="w-5 h-5 text-purple-500" />
-                    <div>
-                      <div className="font-semibold">Event Date</div>
-                      <div className="text-gray-600">January 15, 2024</div>
+                {memo && !memoLoading && !memoError && (
+                  <>
+                    <div className="grid grid-cols-1 gap-3 text-sm">
+                      <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <Calendar className="w-5 h-5 text-purple-500" />
+                        <div>
+                          <div className="font-semibold">Created</div>
+                          <div className="text-gray-600">
+                            {new Date(memo.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <MapPin className="w-5 h-5 text-purple-500" />
+                        <div>
+                          <div className="font-semibold">Chain</div>
+                          <div className="text-gray-600 capitalize">{memo.chain}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <Users className="w-5 h-5 text-purple-500" />
+                        <div>
+                          <div className="font-semibold">Collection</div>
+                          <div className="text-gray-600">{memo.collection}</div>
+                        </div>
+                      </div>
+                      {memo.expiresAt && (
+                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <Calendar className="w-5 h-5 text-red-500" />
+                          <div>
+                            <div className="font-semibold">Expires</div>
+                            <div className="text-gray-600">
+                              {new Date(memo.expiresAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <MapPin className="w-5 h-5 text-purple-500" />
-                    <div>
-                      <div className="font-semibold">Location</div>
-                      <div className="text-gray-600">San Francisco, CA</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <Users className="w-5 h-5 text-purple-500" />
-                    <div>
-                      <div className="font-semibold">Attendees</div>
-                      <div className="text-gray-600">2,847 claimed</div>
-                    </div>
-                  </div>
-                </div>
+                  </>
+                )}
 
                 <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4">
                   <h3 className="font-semibold mb-2">Event Description</h3>

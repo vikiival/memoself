@@ -9,10 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sparkles, Gift } from "lucide-react"
+import { validateClaimCode } from "@/lib/memo-api"
+// import { WalletSelect } from "@/components/account/wallet-select";
 
 export default function ClaimPage() {
   const [claimCode, setClaimCode] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
   const router = useRouter()
 
   const handleClaim = async (e: React.FormEvent) => {
@@ -20,13 +23,25 @@ export default function ClaimPage() {
     if (!claimCode.trim()) return
 
     setIsLoading(true)
+    setError("")
 
-    // Simulate API call to validate claim code
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    // Store the claim code and redirect to details page
-    localStorage.setItem("memoClaimCode", claimCode)
-    router.push("/memo-details")
+    try {
+      // Validate the claim code using the new API
+      const isValid = await validateClaimCode(claimCode)
+      
+      if (isValid) {
+        // Store the claim code and redirect to details page
+        localStorage.setItem("memoClaimCode", claimCode)
+        router.push("/memo-details")
+      } else {
+        setError("Invalid claim code. Please check and try again.")
+      }
+    } catch (err) {
+      setError("Failed to validate claim code. Please try again.")
+      console.error("Claim validation error:", err)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -54,9 +69,7 @@ export default function ClaimPage() {
               <a href="#" className="text-gray-600 hover:text-gray-900">
                 Builders
               </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">
-                Contact Sales
-              </a>
+              {/* <WalletSelect /> */}
               <Button className="bg-purple-600 hover:bg-purple-700">Make a MEMO</Button>
             </div>
           </nav>
@@ -100,6 +113,9 @@ export default function ClaimPage() {
                     className="text-center text-lg font-mono"
                     required
                   />
+                  {error && (
+                    <p className="text-sm text-red-600 text-center">{error}</p>
+                  )}
                 </div>
                 <Button
                   type="submit"
