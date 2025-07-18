@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { use, useEffect, useState } from "react"
+import { use, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,7 +21,7 @@ export default function MEMODetailsPage() {
   const [walletAddress, setWalletAddress] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [isVerified, setIsVerified] = useState(true)
+  const [isVerified, setIsVerified] = useState(false)
   const [currentStep, setCurrentStep] = useState(1) // 1: Verification, 2: Details, 3: Complete
   const [memo, setMemo] = useState<Memo | null>(null)
   const [memoLoading, setMemoLoading] = useState(true)
@@ -29,7 +29,7 @@ export default function MEMODetailsPage() {
   const { selectedAccount } = usePolkadotExtension()
   const router = useRouter()
 
-  console.log("Selected Account:", selectedAccount)
+  const chainName = useMemo(() => memo?.chain === "ahk" ? "Kusama Asset Hub" : "Polkadot Asset Hub", [memo?.chain])
 
   useEffect(() => {
     setMounted(true)
@@ -123,7 +123,7 @@ export default function MEMODetailsPage() {
           <div className="flex items-center justify-center mb-12">
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white text-sm font-semibold">
+                <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-semibold">
                   ✓
                 </div>
                 <span className="ml-2 text-sm text-gray-600">Code Verified</span>
@@ -132,7 +132,7 @@ export default function MEMODetailsPage() {
               <div className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${currentStep >= 1 ? 'bg-purple-500' : 'bg-gray-300'
                   }`}>
-                  {isVerified ? '✓' : '1'}
+                  {memo !== null ? '✓' : '1'}
                 </div>
                 <span className={`ml-2 text-sm ${currentStep >= 1 ? 'font-semibold text-purple-600' : 'text-gray-500'}`}>
                   Identity Verification
@@ -142,19 +142,19 @@ export default function MEMODetailsPage() {
               <div className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep >= 2 ? 'bg-purple-500 text-white' : 'bg-gray-300 text-gray-600'
                   }`}>
-                  2
+                  {isVerified ? '✓' : '2'}
                 </div>
-                <span className={`ml-2 text-sm ${currentStep >= 2 ? 'font-semibold text-purple-600' : 'text-gray-500'}`}>
+                <span className={`ml-2 text-sm ${isVerified && currentStep >= 2 ? 'font-semibold text-purple-600' : 'text-gray-500'}`}>
                   MEMO Details
                 </span>
               </div>
-              <div className={`w-12 h-0.5 ${currentStep >= 3 ? 'bg-purple-300' : 'bg-gray-300'}`}></div>
+              <div className={`w-12 h-0.5 ${currentStep >= 4 ? 'bg-purple-300' : 'bg-gray-300'}`}></div>
               <div className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep >= 3 ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
                   }`}>
-                  {currentStep >= 3 ? '✓' : '3'}
+                  {currentStep >= 4 ? '✓' : '3'}
                 </div>
-                <span className={`ml-2 text-sm ${currentStep >= 3 ? 'font-semibold text-green-600' : 'text-gray-500'}`}>
+                <span className={`ml-2 text-sm ${currentStep >= 4 ? 'font-semibold text-green-600' : 'text-gray-500'}`}>
                   Complete
                 </span>
               </div>
@@ -210,7 +210,7 @@ export default function MEMODetailsPage() {
                         <MapPin className="w-5 h-5 text-purple-500" />
                         <div>
                           <div className="font-semibold">Chain</div>
-                          <div className="text-gray-600 capitalize">{memo.chain}</div>
+                          <div className="text-gray-600 capitalize">{chainName}</div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
