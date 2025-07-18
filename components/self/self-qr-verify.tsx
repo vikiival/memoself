@@ -37,7 +37,7 @@ export function SelfQRVerify({ onSuccess, onError, className, address }: SelfQRV
         endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`,
         logoBase64:
           "https://i.imgur.com/Rz8B3s7.png", // url of a png image, base64 is accepted but not recommended
-        userId: userId,
+        userId: "0x0000000000000000000000000000000000000000",
         endpointType: "staging_https",
         userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
         userDefinedData: "Hello from Memo",
@@ -54,7 +54,7 @@ export function SelfQRVerify({ onSuccess, onError, className, address }: SelfQRV
           nationality: true,
           // date_of_birth: true,
           // passport_number: false,
-          // gender: true,
+          gender: true,
           // expiry_date: false,
         }
       }).build()
