@@ -5,25 +5,47 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Download, Share2, ArrowLeft, Calendar, MapPin } from "lucide-react"
+import { CheckCircle, LinkIcon, Share2, ArrowLeft, Calendar, MapPin } from "lucide-react"
 import Image from "next/image"
+import { Memo } from "@/lib/types"
+import { fetchMemoByCode } from "@/lib/memo-api"
+import { usePolkadotExtension } from "@/providers/polkadot-extension-provider"
 
 export default function ClaimSuccessPage() {
   const [claimCode, setClaimCode] = useState("")
   const [walletAddress, setWalletAddress] = useState("")
   const [mounted, setMounted] = useState(false)
+  const [memo, setMemo] = useState<Memo | null>(null)
+  const [memoLoading, setMemoLoading] = useState(true)
+  const [memoError, setMemoError] = useState("")
   const router = useRouter()
+  const { selectedAccount } = usePolkadotExtension()
 
   useEffect(() => {
     setMounted(true)
     const code = localStorage.getItem("memoClaimCode")
     const address = localStorage.getItem("memoWalletAddress")
-    if (!code || !address) {
+    if (!code) {
       router.push("/")
       return
     }
     setClaimCode(code)
-    setWalletAddress(address)
+
+    // Fetch memo data
+    const loadMemoData = async () => {
+      try {
+        setMemoLoading(true)
+        const memoData = await fetchMemoByCode(code)
+        setMemo(memoData)
+      } catch (error) {
+        console.error("Failed to load memo data:", error)
+        setMemoError("Failed to load memo details. Please try again.")
+      } finally {
+        setMemoLoading(false)
+      }
+    }
+
+    loadMemoData()
   }, [router])
 
   if (!mounted) {
@@ -31,10 +53,11 @@ export default function ClaimSuccessPage() {
   }
 
   const handleDownload = () => {
-    // Simulate download
+    // open on kodadot - kodadot.xyz/ahk/collection/612
     const link = document.createElement("a")
-    link.href = "/placeholder.svg?height=400&width=400"
-    link.download = "my-poap.png"
+    link.href = `https://kodadot.xyz/ahk/collection/${memo?.collection}`
+    link.target = "_blank"
+    link.rel = "noopener noreferrer"
     link.click()
   }
 
@@ -93,8 +116,8 @@ export default function ClaimSuccessPage() {
             <CardHeader className="text-center">
               <div className="relative w-48 h-48 mx-auto mb-4">
                 <Image
-                  src="/placeholder.svg?height=400&width=400"
-                  alt="MEMO Token"
+                  src={memo?.image || "/placeholder.svg?height=400&width=400"}
+                  alt={memo?.name || "MEMO Image"}
                   fill
                   className="rounded-full object-cover border-4 border-purple-200"
                 />
@@ -105,26 +128,26 @@ export default function ClaimSuccessPage() {
                   </Badge>
                 </div>
               </div>
-              <CardTitle className="text-2xl">Web3 Conference 2024</CardTitle>
-              <CardDescription className="text-lg">Memory Protocol</CardDescription>
+              <CardTitle className="text-2xl">{memo?.name}</CardTitle>
+              <CardDescription className="text-lg">{memo?.description}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center space-x-2">
+                {memo?.createdAt ? <div className="flex items-center space-x-2">
                   <Calendar className="w-4 h-4 text-gray-500" />
-                  <span>January 15, 2024</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-4 h-4 text-gray-500" />
-                  <span>San Francisco, CA</span>
-                </div>
+                  <span>{new Date(memo.createdAt).toLocaleDateString()}</span>
+                </div> : null}
+                {memo?.expiresAt ? <div className="flex items-center space-x-2">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <span>{new Date(memo.expiresAt).toLocaleDateString()}</span>
+                </div> : null}
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="text-sm text-gray-600 mb-1">Claim Code</div>
                 <div className="font-mono text-lg font-semibold mb-3">{claimCode}</div>
                 <div className="text-sm text-gray-600 mb-1">Minted to Wallet</div>
-                <div className="font-mono text-sm font-semibold break-all">{walletAddress}</div>
+                <div className="font-mono text-sm font-semibold break-all">{walletAddress || selectedAccount?.address}</div>
               </div>
 
               <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4">
@@ -140,8 +163,8 @@ export default function ClaimSuccessPage() {
                   onClick={handleDownload}
                   className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
+                  <LinkIcon className="w-4 h-4 mr-2" />
+                  Visit on KodaDot
                 </Button>
                 <Button onClick={handleShare} variant="outline" className="flex-1 bg-transparent">
                   <Share2 className="w-4 h-4 mr-2" />
